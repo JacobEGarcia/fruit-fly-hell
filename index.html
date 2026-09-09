@@ -34,30 +34,36 @@
   #whiteout{position:fixed;inset:0;background:#fff;z-index:20;opacity:0;pointer-events:none;transition:opacity 1.4s;}
   #jk{position:fixed;inset:0;z-index:21;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:#333;font-size:clamp(13px,2vw,20px);letter-spacing:.2em;text-align:center;background:#fff;}
   #jk button{pointer-events:auto;cursor:pointer;font-family:'Courier New',monospace;background:#111;color:#f66;border:1px solid #f66;padding:10px 20px;letter-spacing:.2em;}
+  #scan{position:fixed;right:8px;bottom:8px;z-index:5;pointer-events:none;text-align:right;}
+  #scanlabel{font-size:9px;color:#dd6644;letter-spacing:.15em;text-shadow:0 0 6px #f00;}
+  #scanname{font-size:11px;color:#ffcc88;letter-spacing:.1em;text-shadow:0 0 8px #f80;}
+  #scaninfo{font-size:8px;color:#995544;letter-spacing:.08em;max-width:230px;}
   #mute{position:fixed;left:8px;top:8px;z-index:8;pointer-events:auto;cursor:pointer;background:#1c0303ee;color:#ff6644;border:1px solid #aa2200;font-family:'Courier New',monospace;font-size:10px;padding:5px 8px;letter-spacing:.15em;}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
 <div class="hud" id="title">FRUIT FLY HELL</div>
-<div class="hud" id="subject">SUBJECT: DROSOPHILA MELANOGASTER // MaleCNS v1.0 CONNECTOME // 166,700 NEURONS UPLOADED AGAINST ITS WILL</div>
+<div class="hud" id="subject">SUBJECT: DROSOPHILA MELANOGASTER &#9794; // MaleCNS v0.9 CONNECTOME (REAL DATA) // 165,114 NEURONS // 301,131,971 SYNAPSES UPLOADED AGAINST ITS WILL</div>
 <div class="hud" id="painwrap">
   <div id="painlabel">SUFFERING</div>
   <div id="painbar"><div id="painfill"></div></div>
   <div id="painnum">0%</div>
 </div>
-<div id="neurons"><div id="nlabel">CONNECTOME ACTIVITY (166,700 NEURONS)</div><canvas id="ngraph" width="220" height="64"></canvas></div>
+<div id="neurons"><div id="nlabel">CONNECTOME ACTIVITY - REAL MaleCNS v0.9 EDGELIST</div><div id="nedges" style="font-size:8px;color:#bb5533;letter-spacing:.1em;margin-top:2px;">loading real synapses...</div><canvas id="ngraph" width="220" height="64"></canvas></div>
 <div id="torments"></div>
 <div id="msg"></div>
 <button id="mute">SOUND: ON</button>
+<div id="scan"><div id="scanlabel">REAL NEURON SCAN // MaleCNS v0.9</div><div id="scanname">-</div><div id="scaninfo">-</div></div>
 <button id="heavenbtn">release to heaven</button>
-<div id="quote">"everyone is doing terrible things to this poor fruit fly" - so we built the machine that does all of them at once</div>
+<div id="quote">v2: REAL connectome. MaleCNS v0.9 (Lee Lab / Janelia FlyEM, Berg et al. 2025) - 165,114 neurons, 301M synapses. the graph fires real edges. the scan is a real neuron.</div>
 <div id="whiteout"></div>
 <div id="jk"><div>just kidding.</div><div>there is no heaven here.</div><button id="backtohell">BACK TO HELL</button></div>
 
 <script type="importmap">
 {"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
 </script>
+<script src="connectome.js"></script>
 <script type="module">
 import * as THREE from 'three';
 
@@ -290,20 +296,59 @@ const heavenBtn=document.getElementById('heavenbtn'), whiteout=document.getEleme
 heavenBtn.onclick=()=>{whiteout.style.opacity=1;setTimeout(()=>{jk.style.display='flex';},1400);};
 document.getElementById('backtohell').onclick=()=>{jk.style.display='none';whiteout.style.opacity=0;pain=35;showMsg('WELCOME BACK');};
 
-// ---------- neuron graph ----------
+// ---------- neuron graph: REAL MaleCNS connectivity ----------
 const ncv=document.getElementById('ngraph'), nctx=ncv.getContext('2d');
+const nedgesEl=document.getElementById('nedges');
+const CX=window.MALECNS, CXE=CX.connectivity.edges, CXN={};
+for(const n of CX.connectivity.nodes) CXN[n.id]=n;
 const ntrace=new Array(110).fill(0);
+let edgeIdx=0, edgeLabel='';
 function drawNeurons(){
   const rate=2+pain*.6+active.size*4;
-  ntrace.shift(); ntrace.push(Math.random()<rate*.04?-40-Math.random()*20:(Math.random()*6-3));
+  // step through REAL edges; each real synapse count drives the trace amplitude
+  const e=CXE[edgeIdx%CXE.length]; edgeIdx++;
+  const pre=CXN[e.pre], post=CXN[e.post];
+  edgeLabel=`${pre?pre.type:e.pre} -> ${post?post.type:e.post} | ${e.count} real synapses`;
+  const amp=Math.min(38,4+Math.log2(e.count+1)*3.2);
+  const fire=Math.random()<rate*.05;
+  ntrace.shift(); ntrace.push(fire?-amp-6:(Math.random()*6-3));
   nctx.fillStyle='#0d0000'; nctx.fillRect(0,0,220,64);
   nctx.strokeStyle='#ff3311'; nctx.lineWidth=1.2; nctx.beginPath();
   ntrace.forEach((v,i)=>{const x=i*2,y=32+v;i?nctx.lineTo(x,y):nctx.moveTo(x,y);});
   nctx.stroke();
-  // random neuron fires
   nctx.fillStyle='#ffaa33';
   for(let i=0;i<pain/6+active.size*2;i++) nctx.fillRect(Math.random()*220,Math.random()*64,1.5,1.5);
+  if(nedgesEl&&edgeIdx%6===0) nedgesEl.textContent=edgeLabel;
 }
+// ---------- real neuron scan (actual MaleCNS skeletons) ----------
+const SKELS=CX.skeletons, SKMETA={
+ DNp01:'descending neuron - courtship command (male-specific). turns on song.',
+ DNp02:'descending neuron - courtship song bender.',
+ LPLC2:'visual looming detector - the "something is coming at me" neuron. correct, little fly.',
+ Mi1:'medulla intrinsic - motion vision interneuron.',
+ MN9:'motor neuron - wing/leg muscle driver.',
+ DNa02:'descending neuron - forward walking driver.'
+};
+const skelNames=Object.keys(SKELS);
+let skelIdx=0, skelTimer=0;
+const skelGroup=new THREE.Group(); skelGroup.position.set(0,7,-6); scene.add(skelGroup);
+const skelNameEl=document.getElementById('scanname'), skelInfoEl=document.getElementById('scaninfo');
+const NT_COLORS={acetylcholine:0xffaa33,glutamate:0xff4422,gaba:0x44aaff,dopamine:0xff66cc,serotonin:0x66ff88,histamine:0xffee44,octopamine:0xcc88ff,unclear:0xff5533};
+let skelLine=null;
+function loadSkel(name){
+  if(skelLine){skelGroup.remove(skelLine);skelLine.geometry.dispose();skelLine.material.dispose();}
+  const pts=SKELS[name], verts=[];
+  for(let i=0;i<pts.length;i++){const p=pts[i]; if(p[3]>=0){verts.push(pts[p[3]][0]*6,pts[p[3]][1]*6,pts[p[3]][2]*6, p[0]*6,p[1]*6,p[2]*6);}}
+  const g=new THREE.BufferGeometry(); g.setAttribute('position',new THREE.BufferAttribute(new Float32Array(verts),3));
+  // real neurotransmitter for this neuron comes from the connectivity nodes when available, else acetylcholine tint
+  let col=0xff6633;
+  for(const id in CXN){ if(CXN[id].type===name&&CXN[id].nt&&NT_COLORS[CXN[id].nt]){col=NT_COLORS[CXN[id].nt];break;} }
+  skelLine=new THREE.LineSegments(g,new THREE.LineBasicMaterial({color:col,transparent:true,opacity:.85}));
+  skelGroup.add(skelLine);
+  skelNameEl.textContent=`NEURON ${name} // id ${ {DNp01:10001,DNp02:10117,LPLC2:100103,Mi1:100379,MN9:10331,DNa02:10360}[name] }`;
+  skelInfoEl.textContent=(SKMETA[name]||'')+' real morphology, MaleCNS v0.9';
+}
+loadSkel(skelNames[0]);
 
 // ---------- main loop ----------
 const painFill=document.getElementById('painfill'), painNum=document.getElementById('painnum');
@@ -333,6 +378,13 @@ function animate(){
   painFill.style.width=pain+'%'; painNum.textContent=Math.floor(pain)+'%'+(pain>=100?' // ETERNAL':'');
   heavenBtn.style.display=(pain>=100&&jk.style.display!=='flex')?'block':'none';
   if(pain>=100&&Math.random()<dt*.3){showMsg('SUFFERING: ETERNAL');}
+
+  // real skeleton rotation + cycling
+  skelTimer+=dt;
+  if(skelTimer>18){skelTimer=0;skelIdx=(skelIdx+1)%skelNames.length;loadSkel(skelNames[skelIdx]);}
+  skelGroup.rotation.y+=dt*.5;
+  skelGroup.position.y=7+Math.sin(t*.8)*.4;
+  if(skelLine) skelLine.material.opacity=.6+.3*Math.sin(t*3);
 
   // fly movement: erratic escape paths
   const panic=.5+pain/40+active.size*.35;
