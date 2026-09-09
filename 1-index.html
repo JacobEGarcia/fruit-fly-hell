@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>FRUIT FLY HELL</title>
+<style>
+  html,body{margin:0;padding:0;height:100%;overflow:hidden;background:#0a0000;font-family:'Courier New',monospace;-webkit-user-select:none;user-select:none;}
+  #c{position:fixed;inset:0;display:block;}
+  .hud{position:fixed;color:#ff5544;text-shadow:0 0 8px #f00,0 0 2px #000;pointer-events:none;z-index:5;}
+  #title{top:10px;left:0;right:0;text-align:center;font-size:clamp(20px,4vw,42px);letter-spacing:.35em;font-weight:bold;color:#ff2211;animation:flick 3s infinite;}
+  @keyframes flick{0%,100%{opacity:1}92%{opacity:1}93%{opacity:.4}94%{opacity:1}96%{opacity:.6}97%{opacity:1}}
+  #subject{top:64px;left:0;right:0;text-align:center;font-size:clamp(9px,1.4vw,13px);color:#cc8877;letter-spacing:.12em;}
+  #painwrap{top:100px;left:50%;transform:translateX(-50%);width:min(420px,72vw);}
+  #painlabel{font-size:11px;letter-spacing:.3em;text-align:center;margin-bottom:3px;color:#ffaa33;}
+  #painbar{height:14px;border:1px solid #ff3300;background:#1a0000;box-shadow:0 0 12px #f003 inset,0 0 14px #f002;}
+  #painfill{height:100%;width:0%;background:linear-gradient(90deg,#ff6600,#ff2200,#ff0044);box-shadow:0 0 12px #f40;transition:width .15s;}
+  #painnum{text-align:center;font-size:10px;color:#ff7755;margin-top:2px;letter-spacing:.2em;}
+  #neurons{position:fixed;left:8px;bottom:8px;z-index:5;pointer-events:none;}
+  #nlabel{font-size:9px;color:#dd6644;letter-spacing:.15em;margin-bottom:2px;text-shadow:0 0 6px #f00;}
+  #ngraph{display:block;border:1px solid #661100;background:#0d0000aa;box-shadow:0 0 10px #f002;}
+  #torments{position:fixed;right:8px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:8px;z-index:6;}
+  .tbtn{pointer-events:auto;cursor:pointer;font-family:'Courier New',monospace;font-size:clamp(9px,1.2vw,12px);letter-spacing:.12em;
+        background:#1c0303ee;color:#ff6644;border:1px solid #aa2200;padding:10px 12px;text-align:left;min-width:172px;
+        box-shadow:0 0 10px #6003;transition:all .12s;text-shadow:0 0 6px #f008;}
+  .tbtn:hover{background:#3a0505;color:#ffcc99;box-shadow:0 0 18px #f405;}
+  .tbtn.on{background:#5a0808;border-color:#ff4400;color:#ffd0a0;box-shadow:0 0 22px #f409;}
+  #msg{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:7;pointer-events:none;
+       font-size:clamp(14px,2.6vw,28px);color:#ffdd88;letter-spacing:.25em;text-align:center;text-shadow:0 0 16px #f60,0 0 4px #000;opacity:0;transition:opacity .3s;}
+  #quote{position:fixed;left:0;right:0;bottom:10px;text-align:center;font-size:9px;color:#cc6655;letter-spacing:.15em;z-index:5;pointer-events:none;}
+  #heavenbtn{position:fixed;left:50%;bottom:46px;transform:translateX(-50%);z-index:8;display:none;pointer-events:auto;cursor:pointer;
+       font-family:'Courier New',monospace;font-size:11px;letter-spacing:.25em;background:#fff8ee;color:#886;border:1px solid #cca;
+       padding:8px 18px;box-shadow:0 0 24px #fff8;opacity:.85;}
+  #whiteout{position:fixed;inset:0;background:#fff;z-index:20;opacity:0;pointer-events:none;transition:opacity 1.4s;}
+  #jk{position:fixed;inset:0;z-index:21;display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;color:#333;font-size:clamp(13px,2vw,20px);letter-spacing:.2em;text-align:center;background:#fff;}
+  #jk button{pointer-events:auto;cursor:pointer;font-family:'Courier New',monospace;background:#111;color:#f66;border:1px solid #f66;padding:10px 20px;letter-spacing:.2em;}
+  #mute{position:fixed;left:8px;top:8px;z-index:8;pointer-events:auto;cursor:pointer;background:#1c0303ee;color:#ff6644;border:1px solid #aa2200;font-family:'Courier New',monospace;font-size:10px;padding:5px 8px;letter-spacing:.15em;}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hud" id="title">FRUIT FLY HELL</div>
+<div class="hud" id="subject">SUBJECT: DROSOPHILA MELANOGASTER // MaleCNS v1.0 CONNECTOME // 166,700 NEURONS UPLOADED AGAINST ITS WILL</div>
+<div class="hud" id="painwrap">
+  <div id="painlabel">SUFFERING</div>
+  <div id="painbar"><div id="painfill"></div></div>
+  <div id="painnum">0%</div>
+</div>
+<div id="neurons"><div id="nlabel">CONNECTOME ACTIVITY (166,700 NEURONS)</div><canvas id="ngraph" width="220" height="64"></canvas></div>
+<div id="torments"></div>
+<div id="msg"></div>
+<button id="mute">SOUND: ON</button>
+<button id="heavenbtn">release to heaven</button>
+<div id="quote">"everyone is doing terrible things to this poor fruit fly" - so we built the machine that does all of them at once</div>
+<div id="whiteout"></div>
+<div id="jk"><div>just kidding.</div><div>there is no heaven here.</div><button id="backtohell">BACK TO HELL</button></div>
+
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+
+const params = new URLSearchParams(location.search);
+const AUTO = params.get('auto');
+
+// ---------- audio ----------
+let actx=null, master=null, buzzOsc=null, buzzGain=null, beatTimer=null, muted=false;
+function initAudio(){
+  if(actx) return;
+  actx = new (window.AudioContext||window.webkitAudioContext)();
+  master = actx.createGain(); master.gain.value=.5; master.connect(actx.destination);
+  buzzOsc = actx.createOscillator(); buzzOsc.type='sawtooth'; buzzOsc.frequency.value=180;
+  const bp = actx.createBiquadFilter(); bp.type='bandpass'; bp.frequency.value=700; bp.Q.value=2;
+  buzzGain = actx.createGain(); buzzGain.gain.value=.05;
+  buzzOsc.connect(bp); bp.connect(buzzGain); buzzGain.connect(master); buzzOsc.start();
+}
+function thump(freq=60,dur=.18,vol=.5){
+  if(!actx||muted) return;
+  const o=actx.createOscillator(), g=actx.createGain();
+  o.type='sine'; o.frequency.setValueAtTime(freq,actx.currentTime); o.frequency.exponentialRampToValueAtTime(20,actx.currentTime+dur);
+  g.gain.setValueAtTime(vol,actx.currentTime); g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+dur);
+  o.connect(g); g.connect(master); o.start(); o.stop(actx.currentTime+dur);
+}
+function zap(freq=2400,dur=.08,vol=.25){
+  if(!actx||muted) return;
+  const b=actx.createBuffer(1,actx.sampleRate*dur,actx.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*(1-i/d.length);
+  const s=actx.createBufferSource(); s.buffer=b;
+  const f=actx.createBiquadFilter(); f.type='highpass'; f.frequency.value=freq;
+  const g=actx.createGain(); g.gain.value=vol;
+  s.connect(f); f.connect(g); g.connect(master); s.start();
+}
+// the one beat saber song. forever.
+function startSong(){
+  stopSong();
+  let step=0;
+  beatTimer=setInterval(()=>{
+    if(muted) return;
+    const s=step++%8;
+    if(s===0||s===3||s===4||s===6) thump(s===0?70:55,.15,.4);
+    if(s%2===1) zap(6000,.03,.06);
+    if(s===7) thump(440,.05,.12);
+  },214); // ~140bpm 8ths, same song, forever
+}
+function stopSong(){ if(beatTimer){clearInterval(beatTimer);beatTimer=null;} }
+
+// ---------- three scene ----------
+const canvas=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas,antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+const scene=new THREE.Scene();
+scene.background=new THREE.Color(0x0d0100);
+scene.fog=new THREE.FogExp2(0x1a0300,.028);
+const camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.1,400);
+camera.position.set(0,6,18);
+
+scene.add(new THREE.AmbientLight(0x331111,1.6));
+const fireLight=new THREE.PointLight(0xff4400,60,60,1.8); fireLight.position.set(0,3,0); scene.add(fireLight);
+const rim=new THREE.DirectionalLight(0xff2200,1.2); rim.position.set(-6,10,-8); scene.add(rim);
+
+// lava floor: animated canvas texture
+const lc=document.createElement('canvas'); lc.width=lc.height=256; const lctx=lc.getContext('2d');
+const lavaTex=new THREE.CanvasTexture(lc); lavaTex.wrapS=lavaTex.wrapT=THREE.RepeatWrapping; lavaTex.repeat.set(6,6);
+const floor=new THREE.Mesh(new THREE.PlaneGeometry(300,300),new THREE.MeshStandardMaterial({map:lavaTex,emissive:0xff3300,emissiveMap:lavaTex,emissiveIntensity:1.4,roughness:1}));
+floor.rotation.x=-Math.PI/2; floor.position.y=-4; scene.add(floor);
+function drawLava(t){
+  const img=lctx.createImageData(256,256);
+  for(let y=0;y<256;y+=2)for(let x=0;x<256;x+=2){
+    const v=Math.sin(x*.08+t)+Math.sin(y*.09-t*1.3)+Math.sin((x+y)*.05+t*.7)+Math.sin(Math.hypot(x-128,y-128)*.12-t*2);
+    const h=Math.max(0,v/4);
+    const r=60+h*195,g=10+h*90,b=h*20;
+    for(let dy=0;dy<2;dy++)for(let dx=0;dx<2;dx++){const i=((y+dy)*256+x+dx)*4;img.data[i]=r;img.data[i+1]=g;img.data[i+2]=b;img.data[i+3]=255;}
+  }
+  lctx.putImageData(img,0,0); lavaTex.needsUpdate=true;
+}
+
+// brimstone rocks
+const rocks=[];
+for(let i=0;i<14;i++){
+  const r=new THREE.Mesh(new THREE.DodecahedronGeometry(.8+Math.random()*2.2,0),
+    new THREE.MeshStandardMaterial({color:0x1a0a08,roughness:1,emissive:0xff2200,emissiveIntensity:.08}));
+  const a=Math.random()*Math.PI*2, d=9+Math.random()*20;
+  r.position.set(Math.cos(a)*d, Math.random()*10-2, Math.sin(a)*d);
+  r.rotation.set(Math.random()*3,Math.random()*3,Math.random()*3);
+  r.userData.spin=(Math.random()-.5)*.3; r.userData.bob=Math.random()*Math.PI*2; r.userData.y0=r.position.y;
+  scene.add(r); rocks.push(r);
+}
+
+// chains from above
+const chainMat=new THREE.MeshStandardMaterial({color:0x555555,metalness:.9,roughness:.4});
+for(let i=0;i<6;i++){
+  const g=new THREE.Group(); const a=i/6*Math.PI*2, d=12+Math.random()*6;
+  for(let l=0;l<12;l++){
+    const link=new THREE.Mesh(new THREE.TorusGeometry(.28,.07,6,10),chainMat);
+    link.position.y=16-l*.5; link.rotation.y=l%2?Math.PI/2:0; g.add(link);
+  }
+  g.position.set(Math.cos(a)*d,0,Math.sin(a)*d); scene.add(g);
+}
+
+// ember particles
+const N=500, pos=new Float32Array(N*3), vel=new Float32Array(N);
+for(let i=0;i<N;i++){pos[i*3]=(Math.random()-.5)*60;pos[i*3+1]=Math.random()*25-4;pos[i*3+2]=(Math.random()-.5)*60;vel[i]=.5+Math.random()*2;}
+const pgeo=new THREE.BufferGeometry(); pgeo.setAttribute('position',new THREE.BufferAttribute(pos,3));
+const embers=new THREE.Points(pgeo,new THREE.PointsMaterial({color:0xff6622,size:.16,transparent:true,opacity:.9}));
+scene.add(embers);
+
+// ---------- the fly ----------
+const fly=new THREE.Group();
+const bodyMat=new THREE.MeshStandardMaterial({color:0xb98a4a,roughness:.6});
+const body=new THREE.Mesh(new THREE.SphereGeometry(.5,16,12),bodyMat); body.scale.set(1,.8,1.5); fly.add(body);
+const abdomen=new THREE.Mesh(new THREE.SphereGeometry(.42,14,10),new THREE.MeshStandardMaterial({color:0x8a5a2a,roughness:.7}));
+abdomen.position.z=-.62; abdomen.scale.set(.9,.75,1.2); fly.add(abdomen);
+const head=new THREE.Mesh(new THREE.SphereGeometry(.32,14,10),bodyMat); head.position.z=.68; fly.add(head);
+const eyeMat=new THREE.MeshStandardMaterial({color:0xcc1100,emissive:0xff1100,emissiveIntensity:.5,roughness:.25});
+const eyeL=new THREE.Mesh(new THREE.SphereGeometry(.17,10,8),eyeMat); eyeL.position.set(.2,.08,.82); fly.add(eyeL);
+const eyeR=eyeL.clone(); eyeR.position.x=-.2; fly.add(eyeR);
+const wingMat=new THREE.MeshStandardMaterial({color:0xdddddd,transparent:true,opacity:.35,side:THREE.DoubleSide});
+const wingGeo=new THREE.PlaneGeometry(1.1,.5);
+const wingL=new THREE.Mesh(wingGeo,wingMat); wingL.position.set(.55,.3,-.1); wingL.rotation.z=.4; fly.add(wingL);
+const wingR=new THREE.Mesh(wingGeo,wingMat); wingR.position.set(-.55,.3,-.1); wingR.rotation.z=-.4; fly.add(wingR);
+const halo=new THREE.PointLight(0xffcc66,4,6); halo.position.y=.5; fly.add(halo); // ironic glow
+scene.add(fly);
+
+// fly state
+const flyState={pos:new THREE.Vector3(0,2,0),vel:new THREE.Vector3(),panic:0,spasm:0,stuck:0};
+
+// ---------- torment props ----------
+// 1. beat saber columns
+const saberCols=new THREE.Group(); saberCols.visible=false;
+const colMats=[new THREE.MeshStandardMaterial({color:0x220000,emissive:0xff0022,emissiveIntensity:2}),
+               new THREE.MeshStandardMaterial({color:0x000022,emissive:0x2244ff,emissiveIntensity:2})];
+for(let i=0;i<12;i++){
+  const c=new THREE.Mesh(new THREE.BoxGeometry(.55,2.5+Math.random()*3,.55),colMats[i%2].clone());
+  const a=i/12*Math.PI*2; c.position.set(Math.cos(a)*11,-1,Math.sin(a)*11); saberCols.add(c);
+}
+scene.add(saberCols);
+
+// 2. lightning bolts (max pain)
+const bolts=new THREE.Group(); bolts.visible=false; scene.add(bolts);
+function makeBolt(){
+  const pts=[]; let p=fly.position.clone().add(new THREE.Vector3((Math.random()-.5)*8,14,(Math.random()-.5)*8));
+  pts.push(p.clone());
+  const tgt=fly.position.clone();
+  for(let i=0;i<8;i++){p=p.clone().lerp(tgt,(i+1)/8).add(new THREE.Vector3((Math.random()-.5)*1.6,(Math.random()-.5)*.5,(Math.random()-.5)*1.6));pts.push(p.clone());}
+  const g=new THREE.BufferGeometry().setFromPoints(pts);
+  return new THREE.Line(g,new THREE.LineBasicMaterial({color:0x99ccff,transparent:true,opacity:1}));
+}
+
+// 3. black mirror screens
+const screens=new THREE.Group(); screens.visible=false; scene.add(screens);
+const scrTexC=document.createElement('canvas'); scrTexC.width=256; scrTexC.height=144; const sctx=scrTexC.getContext('2d');
+const scrTex=new THREE.CanvasTexture(scrTexC);
+for(let i=0;i<5;i++){
+  const s=new THREE.Mesh(new THREE.PlaneGeometry(5,2.8),
+    new THREE.MeshBasicMaterial({map:scrTex,side:THREE.DoubleSide}));
+  const a=i/5*Math.PI*2+Math.PI/5; s.position.set(Math.cos(a)*9,3.5,Math.sin(a)*9); s.lookAt(0,2,0); screens.add(s);
+}
+function drawScreens(t){
+  sctx.fillStyle='#050508'; sctx.fillRect(0,0,256,144);
+  // giant fly eye staring back, black mirror style
+  for(let i=0;i<400;i++){
+    const x=(i*97+t*40)%256, y=(i*57)%144;
+    sctx.fillStyle=`rgb(${120+((i*13+t*30)%120)},10,10)`;
+    sctx.fillRect(x,y,3,3);
+  }
+  sctx.strokeStyle='#f00'; sctx.lineWidth=2; sctx.strokeRect(4,4,248,136);
+  sctx.fillStyle='#f33'; sctx.font='12px monospace'; sctx.fillText('LIVE FEED: YOU',60,72);
+  sctx.fillText('REC ●',10,20);
+  scrTex.needsUpdate=true;
+}
+
+// 4. flypaper
+const paper=new THREE.Group(); paper.visible=false;
+const strip=new THREE.Mesh(new THREE.CylinderGeometry(.6,.6,9,16,1,true),
+  new THREE.MeshStandardMaterial({color:0xd8b84a,roughness:.9,side:THREE.DoubleSide,emissive:0x664400,emissiveIntensity:.2}));
+paper.add(strip);
+const paperTop=new THREE.Mesh(new THREE.CylinderGeometry(.7,.7,.2,16),new THREE.MeshStandardMaterial({color:0x8a6a2a}));
+paperTop.position.y=4.6; paper.add(paperTop);
+paper.position.set(0,10,0); scene.add(paper);
+
+// 5. swatter
+const swatter=new THREE.Group(); swatter.visible=false;
+const swHandle=new THREE.Mesh(new THREE.BoxGeometry(.3,10,.3),new THREE.MeshStandardMaterial({color:0xcc2222}));
+swHandle.position.y=5; swatter.add(swHandle);
+const swHead=new THREE.Mesh(new THREE.BoxGeometry(7,6,.15),new THREE.MeshStandardMaterial({color:0xee3333,transparent:true,opacity:.85}));
+swHead.position.y=11; swatter.add(swHead);
+const swGrid=new THREE.Mesh(new THREE.BoxGeometry(7.2,6.2,.1),new THREE.MeshBasicMaterial({color:0x991111,wireframe:true}));
+swGrid.position.y=11; swatter.add(swGrid);
+swatter.rotation.x=-Math.PI/2.2; swatter.position.set(0,14,0); scene.add(swatter);
+
+// 6. magnifying glass death ray
+const ray=new THREE.Group(); ray.visible=false;
+const beam=new THREE.Mesh(new THREE.ConeGeometry(1.6,20,20,1,true),
+  new THREE.MeshBasicMaterial({color:0xffee88,transparent:true,opacity:.28,side:THREE.DoubleSide,depthWrite:false}));
+beam.position.y=8; ray.add(beam);
+const hotspot=new THREE.PointLight(0xffee66,50,12,2); hotspot.position.y=-3.2; ray.add(hotspot);
+const lens=new THREE.Mesh(new THREE.CylinderGeometry(2.6,2.6,.3,24),
+  new THREE.MeshStandardMaterial({color:0x8899aa,metalness:.8,roughness:.2,transparent:true,opacity:.6}));
+lens.position.y=17; ray.add(lens);
+scene.add(ray);
+
+// ---------- torment controller ----------
+const TORMENTS=[
+ {id:'song',  label:'&#9835; SAME SONG FOREVER', on:()=>{saberCols.visible=true;startSong();}, off:()=>{saberCols.visible=false;stopSong();}, msg:'PLAY IT AGAIN'},
+ {id:'pain',  label:'&#9889; MAX PAIN', on:()=>{bolts.visible=true;}, off:()=>{bolts.visible=false;bolts.clear();}, msg:'NEURAL CIRCUITS: OVERDRIVE'},
+ {id:'mirror',label:'&#9634; BLACK MIRROR MAZE', on:()=>{screens.visible=true;}, off:()=>{screens.visible=false;}, msg:'IT CAN SEE ITSELF'},
+ {id:'paper', label:'&#9898; FLYPAPER DROP', on:()=>{paper.visible=true;paper.position.y=10;}, off:()=>{paper.visible=false;flyState.stuck=0;}, msg:'STICKY DESCENT'},
+ {id:'swat',  label:'&#10007; THE SWATTER', on:()=>{swatter.visible=true;swatter.position.y=14;}, off:()=>{swatter.visible=false;}, msg:'IT KNOWS WHAT IT DID'},
+ {id:'ray',   label:'&#9788; MAGNIFYING GLASS', on:()=>{ray.visible=true;}, off:()=>{ray.visible=false;}, msg:'SOLAR JUSTICE'},
+];
+let pain=0, shake=0;
+const active=new Set();
+const tDiv=document.getElementById('torments');
+const msgEl=document.getElementById('msg');
+function showMsg(t){msgEl.textContent=t;msgEl.style.opacity=1;clearTimeout(showMsg.t);showMsg.t=setTimeout(()=>msgEl.style.opacity=0,1800);}
+for(const t of TORMENTS){
+  const b=document.createElement('button'); b.className='tbtn'; b.innerHTML=t.label;
+  b.onclick=()=>{initAudio();
+    if(active.has(t.id)){active.delete(t.id);b.classList.remove('on');t.off();}
+    else{active.add(t.id);b.classList.add('on');t.on();showMsg(t.msg);zap(300,.12,.3);}
+  };
+  tDiv.appendChild(b);
+  t.btnEl=b;
+}
+document.getElementById('mute').onclick=e=>{initAudio();muted=!muted;e.target.textContent=muted?'SOUND: OFF':'SOUND: ON';if(master)master.gain.value=muted?0:.5;};
+
+// heaven gag
+const heavenBtn=document.getElementById('heavenbtn'), whiteout=document.getElementById('whiteout'), jk=document.getElementById('jk');
+heavenBtn.onclick=()=>{whiteout.style.opacity=1;setTimeout(()=>{jk.style.display='flex';},1400);};
+document.getElementById('backtohell').onclick=()=>{jk.style.display='none';whiteout.style.opacity=0;pain=35;showMsg('WELCOME BACK');};
+
+// ---------- neuron graph ----------
+const ncv=document.getElementById('ngraph'), nctx=ncv.getContext('2d');
+const ntrace=new Array(110).fill(0);
+function drawNeurons(){
+  const rate=2+pain*.6+active.size*4;
+  ntrace.shift(); ntrace.push(Math.random()<rate*.04?-40-Math.random()*20:(Math.random()*6-3));
+  nctx.fillStyle='#0d0000'; nctx.fillRect(0,0,220,64);
+  nctx.strokeStyle='#ff3311'; nctx.lineWidth=1.2; nctx.beginPath();
+  ntrace.forEach((v,i)=>{const x=i*2,y=32+v;i?nctx.lineTo(x,y):nctx.moveTo(x,y);});
+  nctx.stroke();
+  // random neuron fires
+  nctx.fillStyle='#ffaa33';
+  for(let i=0;i<pain/6+active.size*2;i++) nctx.fillRect(Math.random()*220,Math.random()*64,1.5,1.5);
+}
+
+// ---------- main loop ----------
+const painFill=document.getElementById('painfill'), painNum=document.getElementById('painnum');
+let t0=performance.now(), boltTimer=0, paperPull=0, swatPhase=0, songPulse=0;
+function animate(){
+  requestAnimationFrame(animate);
+  const now=performance.now(), dt=Math.min(.05,(now-t0)/1000); t0=now;
+  const t=now/1000;
+
+  drawLava(t);
+  if(screens.visible) drawScreens(t);
+  drawNeurons();
+
+  // embers
+  const pp=pgeo.attributes.position.array;
+  for(let i=0;i<N;i++){pp[i*3+1]+=vel[i]*dt;if(pp[i*3+1]>22)pp[i*3+1]=-4;}
+  pgeo.attributes.position.needsUpdate=true;
+
+  // rocks
+  for(const r of rocks){r.rotation.x+=r.userData.spin*dt;r.rotation.y+=r.userData.spin*1.3*dt;r.position.y=r.userData.y0+Math.sin(t+r.userData.bob)*.5;}
+
+  // firelight flicker
+  fireLight.intensity=50+Math.sin(t*13)*10+Math.random()*8;
+
+  // pain drift
+  if(active.size>0) pain=Math.min(100,pain+dt*(2.5*active.size)); else pain=Math.max(0,pain-dt*1.2);
+  painFill.style.width=pain+'%'; painNum.textContent=Math.floor(pain)+'%'+(pain>=100?' // ETERNAL':'');
+  heavenBtn.style.display=(pain>=100&&jk.style.display!=='flex')?'block':'none';
+  if(pain>=100&&Math.random()<dt*.3){showMsg('SUFFERING: ETERNAL');}
+
+  // fly movement: erratic escape paths
+  const panic=.5+pain/40+active.size*.35;
+  const tgt=new THREE.Vector3(
+    Math.sin(t*.9)*7+Math.sin(t*2.3)*3*Math.sin(t*.31),
+    2.5+Math.sin(t*1.7)*2.5+Math.sin(t*4.1)*Math.min(1,pain/50),
+    Math.cos(t*1.1)*7+Math.cos(t*2.9)*3*Math.cos(t*.27)
+  );
+  if(flyState.stuck>0){tgt.copy(paper.position);tgt.y-=1.2;flyState.stuck-=dt;}
+  flyState.vel.lerp(tgt.clone().sub(flyState.pos).multiplyScalar(2+panic), .06);
+  flyState.pos.add(flyState.vel.clone().multiplyScalar(dt));
+  fly.position.copy(flyState.pos);
+  if(flyState.vel.lengthSq()>.01) fly.lookAt(flyState.pos.clone().add(flyState.vel));
+  // wing flap
+  const flap=Math.sin(t*(30+pain*.4))*(.9+panic*.1);
+  wingL.rotation.z=.4+flap*.5; wingR.rotation.z=-.4-flap*.5;
+  flyState.spasm=Math.max(0,flyState.spasm-dt*3);
+  if(flyState.spasm>0){fly.position.x+=(Math.random()-.5)*flyState.spasm;fly.position.y+=(Math.random()-.5)*flyState.spasm;}
+  halo.intensity=3+Math.sin(t*6)*1.5;
+
+  // per-torment behavior
+  if(active.has('song')){
+    songPulse+=dt;
+    saberCols.children.forEach((c,i)=>{const s=1+.4*Math.max(0,Math.sin(songPulse*4.68-i*1.05));c.scale.y=s;c.material.emissiveIntensity=.6+s*.5;});
+    camera.position.x+=Math.sin(t*40)*.02;
+  }
+  if(active.has('pain')){
+    boltTimer-=dt;
+    if(boltTimer<=0){
+      boltTimer=.25+Math.random()*.5;
+      bolts.clear(); bolts.add(makeBolt()); if(Math.random()<.5)bolts.add(makeBolt());
+      flyState.spasm=.5; shake=.4; zap(1800+Math.random()*1500,.1,.3); thump(50,.12,.3);
+    }
+    bolts.children.forEach(b=>b.material.opacity-=dt*2);
+  }
+  if(active.has('paper')){
+    paper.position.y=Math.max(2.4,paper.position.y-dt*1.1);
+    paper.rotation.y+=dt*.5;
+    if(paper.position.distanceTo(fly.position)<2.2&&flyState.stuck<=0){flyState.stuck=3;showMsg('CAUGHT');thump(40,.3,.6);}
+    paperPull=Math.min(1,paperPull+dt);
+  }
+  if(active.has('swat')){
+    swatPhase+=dt;
+    const cyc=swatPhase%3;
+    if(cyc<2){ // aim
+      swatter.position.x+= (fly.position.x-swatter.position.x)*dt*3;
+      swatter.position.z+= (fly.position.z-swatter.position.z)*dt*3;
+      swatter.position.y=14+Math.sin(t*2)*.3;
+    } else if(cyc<2.25){ // SLAM
+      swatter.position.y=Math.max(2.5,swatter.position.y-dt*160);
+      if(swatter.position.y<=2.6&&swatPhase%3>2.05&&swatPhase%3<2.15){shake=1;thump(35,.4,.9);showMsg('SLAM');flyState.spasm=.8;}
+    } else swatter.position.y=Math.min(14,swatter.position.y+dt*22);
+  }
+  if(active.has('ray')){
+    ray.position.x+=(fly.position.x-ray.position.x)*dt*1.1;
+    ray.position.z+=(fly.position.z-ray.position.z)*dt*1.1;
+    beam.material.opacity=.22+Math.random()*.14;
+    if(Math.hypot(ray.position.x-fly.position.x,ray.position.z-fly.position.z)<1.6){flyState.spasm=Math.max(flyState.spasm,.25);if(Math.random()<dt*2){zap(5000,.05,.15);showMsg('SMOKE RISING');}}
+  }
+
+  // camera: slow orbit, tighter with pain
+  const camR=18-pain*.06-active.size*.6;
+  camera.position.set(Math.sin(t*.11)*camR,6+Math.sin(t*.07)*2,Math.cos(t*.11)*camR);
+  camera.lookAt(0,2,0);
+  if(shake>0){camera.position.x+=(Math.random()-.5)*shake;camera.position.y+=(Math.random()-.5)*shake;shake=Math.max(0,shake-dt*2);}
+
+  renderer.render(scene,camera);
+}
+
+function resize(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);}
+addEventListener('resize',resize); resize();
+animate();
+
+// screenshot/test mode: auto-enable torments, no audio
+if(AUTO!==null){
+  const list=AUTO?AUTO.split(','):['song','pain','swat'];
+  for(const t of TORMENTS) if(list.includes(t.id)){active.add(t.id);t.btnEl.classList.add('on');t.on();}
+  stopSong(); // headless: no audio context anyway
+  pain=62;
+}
+</script>
+</body>
+</html>
